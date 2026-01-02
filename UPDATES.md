@@ -21,3 +21,16 @@ created:
 changed:
 
 - app.py
+
+v0.1.2
+GOAL: bring course inputs into a lecture driven model that automatically computes study goals
+
+created:
+
+- no files created
+
+changed:
+
+- app.py
+- scheduler/
+  models.py
