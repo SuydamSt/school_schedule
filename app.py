@@ -1,5 +1,9 @@
 import streamlit as st
 
+from storage.repo import (
+    save_data,
+    load_data
+)
 from scheduler.models import (
     Day,
     Lecture,
@@ -22,6 +26,32 @@ with st.sidebar:
     st.header("preferences")
     prefs: Preferences = st.session_state.prefs
 
+    # --- dev block 3: save/load/reset (added) ---
+    st.subheader("data")
+    c_save, c_load, c_reset = st.columns(3)
+
+    if c_save.button("save"):
+        data = InputData(lectures=st.session_state.lectures, prefs=st.session_state.prefs)
+        save_data(data)
+        st.success("saved to data.json")
+
+    if c_load.button("load"):
+        loaded = load_data()
+        if loaded:
+            st.session_state.lectures = loaded.lectures
+            st.session_state.prefs = loaded.prefs
+            st.rerun()
+        else:
+            st.warning("no data.json found")
+
+    if c_reset.button("reset"):
+        st.session_state.lectures = []
+        st.session_state.prefs = Preferences()
+        st.rerun()
+
+    st.divider()
+    # --- end dev block 3 ---
+
     c1, c2 = st.columns(2)
     with c1:
         earliest = st.text_input("earliest start (hh:mm)", value=minutes_to_hhmm(prefs.earliest_start))
@@ -30,10 +60,18 @@ with st.sidebar:
         sleep_start = st.text_input("sleep start (hh:mm)", value=minutes_to_hhmm(prefs.sleep_start))
         sleep_end = st.text_input("sleep end (hh:mm)", value=minutes_to_hhmm(prefs.sleep_end))
 
-    slot_minutes = st.selectbox("slot size (minutes)", [15, 30, 45, 60], index=[15, 30, 45, 60].index(prefs.slot_minutes))
-    min_block = st.selectbox("min block (minutes)", [15, 30, 45, 60], index=[15, 30, 45, 60].index(prefs.min_block))
-    max_block = st.selectbox("max block (minutes)", [60, 90, 120, 150, 180], index=[60, 90, 120, 150, 180].index(prefs.max_block))
-    per_day = st.selectbox("max blocks per day", [2, 3, 4, 5, 6], index=[2, 3, 4, 5, 6].index(prefs.prefer_blocks_per_day_max))
+    slot_minutes = st.selectbox(
+        "slot size (minutes)", [15, 30, 45, 60], index=[15, 30, 45, 60].index(prefs.slot_minutes)
+    )
+    min_block = st.selectbox(
+        "min block (minutes)", [15, 30, 45, 60], index=[15, 30, 45, 60].index(prefs.min_block)
+    )
+    max_block = st.selectbox(
+        "max block (minutes)", [60, 90, 120, 150, 180], index=[60, 90, 120, 150, 180].index(prefs.max_block)
+    )
+    per_day = st.selectbox(
+        "max blocks per day", [2, 3, 4, 5, 6], index=[2, 3, 4, 5, 6].index(prefs.prefer_blocks_per_day_max)
+    )
 
     try:
         prefs.earliest_start = hhmm_to_minutes(earliest)
@@ -114,7 +152,10 @@ with tab1:
     if not targets:
         st.caption("add at least one lecture to compute targets")
     else:
-        rows = [{"course": k, "target_minutes": v, "target_hours": round(v / 60, 2)} for k, v in sorted(targets.items())]
+        rows = [
+            {"course": k, "target_minutes": v, "target_hours": round(v / 60, 2)}
+            for k, v in sorted(targets.items())
+        ]
         st.dataframe(rows, use_container_width=True)
 
 with tab2:

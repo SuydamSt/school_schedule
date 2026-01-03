@@ -1,0 +1,14 @@
+{
+  "lectures": [
+  ],
+  "prefs": {
+    "earliest_start": 480,
+    "latest_end": 1320,
+    "sleep_start": 1380,
+    "sleep_end": 420,
+    "slot_minutes": 30,
+    "min_block": 30,
+    "max_block": 90,
+    "prefer_blocks_per_day_max": 4
+  }
+}
