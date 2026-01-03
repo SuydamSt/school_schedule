@@ -54,3 +54,22 @@ created:
 changed:
 
 - app.py
+
+v0.1.4
+GOAL: building foundations of schedule geerator
+
+created:
+
+- scheduler/
+  engine.py
+  scoring.py
+
+changed:
+
+- storage/
+  repo.py
+
+- scheduler/
+  models.py
+
+- app.py

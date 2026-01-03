@@ -37,6 +37,7 @@ class Lecture(BaseModel):
     start: Minute
     end: Minute
     multiplier: float = Field(ge=0.0, default=2.0)
+    online: bool = False
 
     @property
     def duration_minutes(self) -> int:
@@ -50,13 +51,22 @@ class Lecture(BaseModel):
 class Preferences(BaseModel):
     earliest_start: Minute = 8 * 60
     latest_end: Minute = 22 * 60
-    sleep_start: Minute = 23 * 60
-    sleep_end: Minute = 7 * 60
+
+    sleep_start: Minute = 9 * 60
+    sleep_end: Minute = 17 * 60
 
     slot_minutes: int = 30
     min_block: int = 30
     max_block: int = 90
     prefer_blocks_per_day_max: int = 4
+    buffer_minutes: int = 30
+
+    candidate_count: int = 30
+
+    weight_spread: float = 1.0
+    weight_late: float = 1.0
+    weight_day_overload: float = 1.0
+    weight_gap_bonus: float = 1.0
 
 
 class InputData(BaseModel):
@@ -64,9 +74,26 @@ class InputData(BaseModel):
     prefs: Preferences
 
 
+class TimeBlock(BaseModel):
+    day: Day
+    start: Minute
+    end: Minute
+    label: str
+
+
 def compute_course_targets(lectures: List[Lecture]) -> Dict[str, int]:
     totals: Dict[str, int] = {}
     for lec in lectures:
-        name = (lec.course_name or "").strip() or "untitled course"
+        name = str(lec.course_name).strip() or "untitled course"
         totals[name] = totals.get(name, 0) + lec.target_study_minutes
     return totals
+
+
+def overlaps(a_start: int, a_end: int, b_start: int, b_end: int) -> bool:
+    return a_start < b_end and b_start < a_end
+
+
+def in_sleep_window(t: int, sleep_start: int, sleep_end: int) -> bool:
+    if sleep_start <= sleep_end:
+        return sleep_start <= t < sleep_end
+    return t >= sleep_start or t < sleep_end
