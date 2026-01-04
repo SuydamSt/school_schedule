@@ -23,6 +23,12 @@ def _study_blocks(blocks: List[TimeBlock]) -> List[TimeBlock]:
     return [b for b in blocks if b.label.startswith("Study:")]
 
 
+def _course_from_label(label: str) -> str:
+    if label.startswith("Study:"):
+        return label[len("Study:") :].strip()
+    return ""
+
+
 def score_plan(blocks: List[TimeBlock], prefs: Preferences) -> float:
     studies = _study_blocks(blocks)
     if not studies:
@@ -65,9 +71,18 @@ def score_plan(blocks: List[TimeBlock], prefs: Preferences) -> float:
         if best_dist <= 60:
             gap_bonus += (60.0 - float(best_dist)) * 0.25
 
+    variety_pen = 0.0
+    for d in DAYS_IN_ORDER:
+        day_studies = [b for b in studies if b.day == d]
+        day_studies.sort(key=lambda x: x.start)
+        for i in range(1, len(day_studies)):
+            if _course_from_label(day_studies[i].label) == _course_from_label(day_studies[i - 1].label):
+                variety_pen += 1.0
+
     score = 0.0
     score -= prefs.weight_spread * spread_pen
     score -= prefs.weight_late * late_pen
     score -= prefs.weight_day_overload * overload_pen
     score += prefs.weight_gap_bonus * gap_bonus
+    score -= 0.75 * variety_pen
     return score

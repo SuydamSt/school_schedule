@@ -55,6 +55,8 @@ changed:
 
 - app.py
 
+---
+
 v0.1.4
 GOAL: building foundations of schedule geerator
 
@@ -73,3 +75,17 @@ changed:
   models.py
 
 - app.py
+
+---
+
+v0.1.5
+goal: reserve unavailable time in scheduling without display, general cleanup
+
+created:
+
+- no files created
+
+changed:
+
+- scheduler/
+  engine.py

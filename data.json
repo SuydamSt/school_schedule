@@ -1,34 +1,5 @@
 {
-  "lectures": [
-    {
-      "course_name": "Programming For AI",
-      "day": "Mon",
-      "start": 480,
-      "end": 660,
-      "multiplier": 2.0
-    },
-    {
-      "course_name": "Intro to Data Science",
-      "day": "Mon",
-      "start": 780,
-      "end": 960,
-      "multiplier": 2.0
-    },
-    {
-      "course_name": "Discrete Math",
-      "day": "Thu",
-      "start": 900,
-      "end": 1080,
-      "multiplier": 2.0
-    },
-    {
-      "course_name": "Linear Algebra",
-      "day": "Fri",
-      "start": 480,
-      "end": 660,
-      "multiplier": 2.0
-    }
-  ],
+  "lectures": [],
   "prefs": {
     "earliest_start": 480,
     "latest_end": 1320,
