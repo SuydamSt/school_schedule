@@ -38,6 +38,7 @@ class Lecture(BaseModel):
     end: Minute
     multiplier: float = Field(ge=0.0, default=2.0)
     online: bool = False
+    color_hex: str = "#4e79a7"
 
     @property
     def duration_minutes(self) -> int:
@@ -91,9 +92,3 @@ def compute_course_targets(lectures: List[Lecture]) -> Dict[str, int]:
 
 def overlaps(a_start: int, a_end: int, b_start: int, b_end: int) -> bool:
     return a_start < b_end and b_start < a_end
-
-
-def in_sleep_window(t: int, sleep_start: int, sleep_end: int) -> bool:
-    if sleep_start <= sleep_end:
-        return sleep_start <= t < sleep_end
-    return t >= sleep_start or t < sleep_end

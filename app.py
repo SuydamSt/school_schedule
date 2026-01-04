@@ -1,3 +1,5 @@
+import calendar
+import datetime as dt
 import streamlit as st
 
 from storage.repo import save_data, load_data
@@ -20,6 +22,69 @@ if "lectures" not in st.session_state:
     st.session_state.lectures = []
 if "prefs" not in st.session_state:
     st.session_state.prefs = Preferences()
+
+st.markdown(
+    """
+<style>
+.daycard {
+  border: 1px solid rgba(0,0,0,0.15);
+  border-radius: 14px;
+  padding: 10px 10px 6px 10px;
+  min-height: 190px;
+  background: rgba(0,0,0,0.01);
+}
+.daycard.out {
+  opacity: 0.45;
+}
+.daynum {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+.blockchip {
+  border-left-width: 6px;
+  border-left-style: solid;
+  padding: 6px 8px;
+  margin: 6px 0;
+  background: rgba(0,0,0,0.03);
+  border-radius: 12px;
+}
+.blockchip .t {
+  font-size: 0.82rem;
+  line-height: 1.1;
+  word-break: break-word;
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
+def course_from_label(label: str) -> str:
+    if label.startswith("Study:"):
+        return label[len("Study:") :].strip()
+    if label.startswith("Lecture:"):
+        return label[len("Lecture:") :].strip()
+    return ""
+
+def build_course_colors(lectures: list[Lecture]) -> dict[str, str]:
+    out: dict[str, str] = {}
+    for lec in lectures:
+        name = str(lec.course_name).strip() or "untitled course"
+        c = str(getattr(lec, "color_hex", "")).strip() or "#4e79a7"
+        out[name] = c
+    return out
+
+def day_enum_from_date(date_obj: dt.date) -> Day:
+    return DAYS_IN_ORDER[date_obj.weekday()]
+
+def block_html(label: str, start: int, end: int, color: str) -> str:
+    text = f"{minutes_to_hhmm(start)}–{minutes_to_hhmm(end)} {label}"
+    safe = (
+        text.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+    )
+    return f"<div class='blockchip' style='border-left-color:{color};'><div class='t'>{safe}</div></div>"
 
 with st.sidebar:
     st.header("preferences")
@@ -71,6 +136,13 @@ with st.sidebar:
     weight_day_overload = st.slider("avoid overloaded days", 0.0, 3.0, float(prefs.weight_day_overload), 0.1)
     weight_gap_bonus = st.slider("prefer gaps near lectures", 0.0, 3.0, float(prefs.weight_gap_bonus), 0.1)
 
+    st.divider()
+    st.subheader("calendar")
+    today = dt.date.today()
+    view_year = st.selectbox("year", [today.year - 1, today.year, today.year + 1], index=1)
+    view_month = st.selectbox("month", list(range(1, 13)), index=today.month - 1)
+    week_variation = st.selectbox("week variation", ["on", "off"], index=0)
+
     try:
         prefs.earliest_start = hhmm_to_minutes(earliest)
         prefs.latest_end = hhmm_to_minutes(latest)
@@ -90,13 +162,13 @@ with st.sidebar:
     except Exception:
         st.warning("time format should be hh:mm (example: 08:30)")
 
-tab1, tab2, tab3, tab4 = st.tabs(["lectures", "availability", "plan", "debug"])
+tab1, tab2, tab3, tab4 = st.tabs(["lectures", "availability", "plan (month)", "debug"])
 
 with tab1:
     st.subheader("lectures (this drives study targets)")
 
     for idx, lec in enumerate(list(st.session_state.lectures)):
-        col1, col2, col3, col4, col5, col6 = st.columns([2, 1, 1, 1, 1, 1])
+        col1, col2, col3, col4, col5, col6, col7 = st.columns([2, 1, 1, 1, 1, 1, 1])
         with col1:
             cname = st.text_input(f"course #{idx+1}", value=lec.course_name, key=f"lec_course_{idx}")
         with col2:
@@ -113,6 +185,8 @@ with tab1:
         with col5:
             online = st.checkbox("online", value=bool(getattr(lec, "online", False)), key=f"lec_online_{idx}")
         with col6:
+            color_hex = st.color_picker("color", value=str(getattr(lec, "color_hex", "#4e79a7")), key=f"lec_color_{idx}")
+        with col7:
             if st.button("remove", key=f"lec_remove_{idx}"):
                 st.session_state.lectures.pop(idx)
                 st.rerun()
@@ -143,13 +217,14 @@ with tab1:
                 end=hhmm_to_minutes(end),
                 multiplier=float(multiplier),
                 online=bool(online),
+                color_hex=str(color_hex).strip() or "#4e79a7",
             )
         except Exception:
             st.warning("lecture times must be hh:mm")
 
     if st.button("add lecture"):
         st.session_state.lectures.append(
-            Lecture(course_name="course 1", day=Day.mon, start=9 * 60, end=10 * 60, multiplier=2.0, online=False)
+            Lecture(course_name="course 1", day=Day.mon, start=9 * 60, end=10 * 60, multiplier=2.0, online=False, color_hex="#4e79a7")
         )
         st.rerun()
 
@@ -179,18 +254,62 @@ with tab2:
             st.dataframe(rows, use_container_width=True)
 
 with tab3:
-    st.subheader("plan")
+    st.subheader("plan (month view)")
     data = InputData(lectures=st.session_state.lectures, prefs=st.session_state.prefs)
-    plan = build_week_plan(data)
+    colors = build_course_colors(st.session_state.lectures)
 
-    for day in DAYS_IN_ORDER:
-        st.markdown(f"### {day.value}")
-        day_blocks = [b for b in plan if b.day == day]
-        if not day_blocks:
-            st.caption("no blocks")
-        else:
-            rows = [{"start": minutes_to_hhmm(b.start), "end": minutes_to_hhmm(b.end), "label": b.label, "minutes": b.end - b.start} for b in day_blocks]
-            st.dataframe(rows, use_container_width=True)
+    cal = calendar.Calendar(firstweekday=0)
+    month_weeks = list(cal.monthdatescalendar(int(view_year), int(view_month)))
+
+    week_plans: list[tuple[list[dt.date], dict[dt.date, list]]] = []
+    for week in month_weeks:
+        anchor = next((d for d in week if d.month == int(view_month)), week[0])
+        iso = anchor.isocalendar()
+        seed = int(view_year) * 10000 + int(view_month) * 100 + int(iso.week)
+        if week_variation == "off":
+            seed = int(view_year) * 10000 + int(view_month) * 100 + 1
+
+        plan = build_week_plan(data, seed=seed)
+        by_weekday: dict[int, list] = {i: [] for i in range(7)}
+        for b in plan:
+            by_weekday[DAYS_IN_ORDER.index(b.day)].append(b)
+        for i in by_weekday:
+            by_weekday[i].sort(key=lambda x: x.start)
+
+        date_map: dict[dt.date, list] = {}
+        for d in week:
+            wd = d.weekday()
+            date_map[d] = by_weekday.get(wd, [])
+        week_plans.append((week, date_map))
+
+    headers = st.columns(7)
+    for i, name in enumerate(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]):
+        headers[i].markdown(f"**{name}**")
+
+    for week, date_map in week_plans:
+        cols = st.columns(7)
+        for i, date_obj in enumerate(week):
+            in_month = (date_obj.month == int(view_month))
+            cls = "daycard" if in_month else "daycard out"
+            blocks = date_map.get(date_obj, [])
+
+            parts = [f"<div class='{cls}'><div class='daynum'>{date_obj.day}</div>"]
+            limit = 6
+            shown = 0
+            for b in blocks:
+                c = course_from_label(b.label)
+                color = colors.get(c, "#888888")
+                parts.append(block_html(b.label, b.start, b.end, color))
+                shown += 1
+                if shown >= limit:
+                    break
+            if len(blocks) > limit:
+                parts.append(f"<div style='opacity:0.7; font-size:0.8rem; padding:2px 2px;'>+{len(blocks)-limit} more</div>")
+            parts.append("</div>")
+            html = "".join(parts)
+
+            with cols[i]:
+                st.markdown(html, unsafe_allow_html=True)
 
 with tab4:
     st.subheader("debug data")

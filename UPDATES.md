@@ -89,3 +89,18 @@ changed:
 
 - scheduler/
   engine.py
+
+---
+
+v0.1.6
+goal: visual overhaul and weekly variation
+
+created:
+
+- no files created
+
+changed:
+
+- app.py
+- scheduler/
+  engine.py

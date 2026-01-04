@@ -270,7 +270,7 @@ def _candidate_study_blocks(
     return study
 
 
-def build_week_plan(data: InputData) -> List[TimeBlock]:
+def build_week_plan(data: InputData, seed: int = 1) -> List[TimeBlock]:
     prefs = data.prefs
     sleep_abs = reserve_sleep_week_abs(data)
     base = _base_plan_blocks(data)
@@ -279,8 +279,10 @@ def build_week_plan(data: InputData) -> List[TimeBlock]:
     best_score = None
 
     n = max(1, int(prefs.candidate_count))
+    base_seed = int(seed)
+
     for i in range(n):
-        rng = random.Random(i + 1)
+        rng = random.Random(base_seed * 1000003 + (i + 1))
         study = _candidate_study_blocks(data, rng, sleep_abs)
         blocks = base + study
         blocks.sort(key=lambda b: (DAYS_IN_ORDER.index(b.day), b.start))

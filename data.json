@@ -1,5 +1,51 @@
 {
-  "lectures": [],
+  "lectures": [
+    {
+      "course_name": "COSC 12001",
+      "day": "Mon",
+      "start": 480,
+      "end": 660,
+      "multiplier": 1.0,
+      "online": false,
+      "color_hex": "#5b9655"
+    },
+    {
+      "course_name": "COSC 12000",
+      "day": "Mon",
+      "start": 780,
+      "end": 960,
+      "multiplier": 1.0,
+      "online": false,
+      "color_hex": "#b53f65"
+    },
+    {
+      "course_name": "MATH 12000",
+      "day": "Thu",
+      "start": 900,
+      "end": 1080,
+      "multiplier": 1.0,
+      "online": false,
+      "color_hex": "#e2e163"
+    },
+    {
+      "course_name": "MATH 12001",
+      "day": "Fri",
+      "start": 480,
+      "end": 660,
+      "multiplier": 1.0,
+      "online": false,
+      "color_hex": "#4e79a7"
+    },
+    {
+      "course_name": "PSYCH 10003",
+      "day": "Mon",
+      "start": 540,
+      "end": 720,
+      "multiplier": 1.0,
+      "online": true,
+      "color_hex": "#be5bc5"
+    }
+  ],
   "prefs": {
     "earliest_start": 480,
     "latest_end": 1320,
@@ -10,7 +56,7 @@
     "max_block": 90,
     "prefer_blocks_per_day_max": 4,
     "buffer_minutes": 30,
-    "candidate_count": 30,
+    "candidate_count": 100,
     "weight_spread": 1.0,
     "weight_late": 1.0,
     "weight_day_overload": 1.0,
